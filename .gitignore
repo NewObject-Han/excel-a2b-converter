@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+*.spec
+
+# 运行产物 / 私有数据（含客户业务表格，切勿提交）
+转换结果.xlsx
+*_转换结果.xlsx
+*.xls
+*.xlsx
+*.xlsm
+~$*
+*.rar
+*.zip
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
