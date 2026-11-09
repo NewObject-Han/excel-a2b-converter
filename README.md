@@ -153,20 +153,6 @@ bash scripts/build_windows.sh  # Windows (Git Bash) → dist/excel-a2b.exe
 - 纯浏览器模式（SheetJS）不保留字体 / 边框等单元格样式；本地引擎模式保留。
 - 自定义变换预设别名只在 Python 引擎侧展开；纯浏览器模式请写展开后的变换链。
 
-## 开发与贡献
-
-```bash
-python -m py_compile scripts/excel_a2b.py web/serve.py
-node --check web/assets/app.js
-python scripts/excel_a2b.py convert --config examples/mapping.example.json
-```
-
-欢迎提 Issue / PR，见 [CONTRIBUTING.md](CONTRIBUTING.md)。
-
 ## 第三方依赖与许可
 
 见 [THIRD-PARTY.md](THIRD-PARTY.md)。简要：`openpyxl`（MIT）、`xlrd`（BSD-3-Clause）、vendored `SheetJS 0.20.3`（Apache-2.0）、`PyInstaller`（仅打包时使用）。
-
-## 许可证
-
-[MIT](LICENSE) © 2026 excel-a2b-converter contributors
