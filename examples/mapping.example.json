@@ -1,0 +1,36 @@
+{
+  "_README": "示例：把 .xls 大货单按映射写入 .xlsx 销售单模板。按需替换 path / 列名即可。",
+  "source": {
+    "path": "SH261005C-eclipse返单兰溪大货单（11月20号前出货）.xls",
+    "sheet": "1",
+    "header_row": 3
+  },
+  "target": {
+    "template": "销售大货单_2026-10-06-14-23-28-573.xlsx",
+    "path": "转换结果.xlsx",
+    "sheet": "Sheet1",
+    "header_row": 2,
+    "data_start_row": 3
+  },
+  "mapping": [
+    {"target": "下单明细.序号", "source": "@index"},
+    {"target": "下单明细.数据标题", "source": "{款式}-{货号}", "type": "template"},
+    {"target": "下单明细.选择产品货号", "source": "货号"},
+    {"target": "下单明细.数量", "source": "数量", "transforms": ["number"]},
+    {"target": "下单明细.成本单价", "source": "单价", "transforms": ["number"]},
+    {"target": "下单明细.产品尺寸/cm", "source": "尺寸"},
+    {"target": "下单明细.图片", "source": "图片", "default": ""},
+    {"target": "下单明细. 产品分类", "type": "const", "value": "抓夹"}
+  ],
+  "options": {
+    "skip_empty_source_rows": true,
+    "clear_existing_data": true,
+    "on_missing_source": "error",
+    "create_missing_columns": false,
+    "row_filter": {
+      "column": "货号",
+      "match": "^SH\\d+C-\\d+$",
+      "mode": "include"
+    }
+  }
+}
