@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Excel A→B 转换 · 操作台</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234f8cff'/%3E%3Ctext x='16' y='22' font-size='15' font-family='sans-serif' font-weight='bold' fill='%23fff' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">A→B</div>
+  <div class="titles">
+    <h1>Excel 转换操作台</h1>
+    <span>A 表 → B 表 · 字段对应关系自定义</span>
+  </div>
+  <div class="spacer"></div>
+  <span class="badge" id="modeBadge" title="模式说明">
+    <span class="dot"></span><span id="modeText">浏览器模式</span>
+  </span>
+  <button class="icon-btn" id="btnTheme" title="切换深浅色">☾ / ☀</button>
+</div>
+
+<div class="wrap">
+
+  <!-- 步骤 1 -->
+  <section class="section">
+    <header>
+      <span class="step-no">1</span>
+      <h2>选择文件</h2>
+      <span class="hint">把 A 源表与 B 目标模板拖进对应框，或点击选择</span>
+    </header>
+    <div class="body">
+      <div class="drop-grid">
+        <div class="drop" id="dropA">
+          <input type="file" id="fileA" accept=".xls,.xlsx,.xlsm,.csv" multiple hidden>
+          <button class="clear" id="clearA" title="移除">×</button>
+          <div class="tagx"><b>A</b> · 源数据表 <span class="mini">（可多选 = 批量转换）</span></div>
+          <div id="infoA" class="empty">
+            拖入或点击选择<small>支持 .xls / .xlsx / .xlsm / .csv</small>
+          </div>
+        </div>
+        <div class="drop" id="dropB">
+          <input type="file" id="fileB" accept=".xls,.xlsx,.xlsm,.csv" hidden>
+          <button class="clear" id="clearB" title="移除">×</button>
+          <div class="tagx"><b>B</b> · 目标模板 <span class="mini">（可留空，则新建工作簿）</span></div>
+          <div id="infoB" class="empty">
+            拖入或点击选择<small>给了模板 → 保留其表头与格式</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label>A 表 · 工作表</label>
+          <select id="sheetA" disabled><option>—</option></select>
+        </div>
+        <div class="field">
+          <label>A 表 · 表头行（第几行是列名）</label>
+          <input type="number" id="headA" value="1" min="1" disabled>
+        </div>
+        <div class="field">
+          <label>B 表 · 工作表</label>
+          <select id="sheetB" disabled><option>—</option></select>
+        </div>
+        <div class="field">
+          <label>B 表 · 表头行（第几行是列名）</label>
+          <input type="number" id="headB" value="1" min="1" disabled>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="btn" id="btnDetect" disabled>自动识别表头行</button>
+        <button class="btn ghost" id="btnReload" disabled>重新读取</button>
+        <span class="mini" id="structHint"></span>
+      </div>
+
+      <div class="row batch-bar" id="batchBar" hidden>
+        <span class="count-pill">批量 × <b id="batchCount">1</b></span>
+        <span class="mini">这些 A 文件将套用同一配置逐个转换：<span id="batchNames"></span></span>
+        <button class="btn ghost" id="btnBatchClear">取消批量</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 步骤 2 -->
+  <section class="section">
+    <header>
+      <span class="step-no">2</span>
+      <h2>字段映射</h2>
+      <span class="hint" id="mapCount"></span>
+    </header>
+    <div class="body">
+      <div class="btn-row">
+        <button class="btn" id="btnAuto" disabled>按同名自动匹配</button>
+        <button class="btn ghost" id="btnAdd" disabled>+ 添加一列</button>
+        <button class="btn ghost" id="btnClearMap" disabled>清空映射</button>
+        <button class="btn ghost" id="btnImport">导入 mapping.json</button>
+        <button class="btn ghost" id="btnExport" disabled>导出 mapping.json</button>
+        <input type="file" id="fileJson" accept=".json" hidden>
+      </div>
+      <div class="mini" style="margin-top:10px">
+        来源类型：<b>列</b> 取 A 表某列 · <b>常量</b> 固定值 · <b>模板</b> 拼接（如 <code>{款式}-{货号}</code>）· <b>表达式</b> 计算（如 <code>num(数量)*num(单价)</code>）· <b>行号</b> 自增序号。
+        变换列填逗号分隔名称，例：<code>trim,number</code>、<code>date:%Y-%m-%d</code>、<code>round:2</code>。
+        变换列也可点右侧「预设 ▾」下拉直接选用常用公式（会替换当前变换内容），选中后仍能继续手动编辑。
+      </div>
+      <div class="table-scroll" style="margin-top:12px">
+        <table id="mapTable">
+          <thead>
+            <tr>
+              <th style="width:24%">B 目标列</th>
+              <th style="width:13%">来源类型</th>
+              <th style="width:24%">来源 / 值</th>
+              <th style="width:20%">变换</th>
+              <th style="width:13%">默认值</th>
+              <th style="width:6%"></th>
+            </tr>
+          </thead>
+          <tbody id="mapBody"></tbody>
+        </table>
+      </div>
+      <div class="empty-state" id="mapEmpty">先加载文件，再来配置字段对应关系。</div>
+    </div>
+  </section>
+
+  <!-- 步骤 3 -->
+  <section class="section">
+    <header>
+      <span class="step-no">3</span>
+      <h2>转换选项</h2>
+    </header>
+    <div class="body">
+      <div class="rowline">
+        <label class="switch"><input type="checkbox" id="optSkipEmpty" checked>跳过 A 表整行为空的行</label>
+        <label class="switch"><input type="checkbox" id="optClear" checked>套模板时先清空模板原有数据行</label>
+        <label class="switch"><input type="checkbox" id="optCreateCol">目标缺列时自动追加新列</label>
+        <div class="field inline">
+          <label>源列缺失时</label>
+          <select id="optOnMissing">
+            <option value="empty">留空</option>
+            <option value="error">报错提示</option>
+            <option value="keep">填入列名文本</option>
+          </select>
+        </div>
+        <div class="field inline">
+          <label>输出文件名</label>
+          <input type="text" id="outName" value="转换结果.xlsx" style="min-width:190px">
+        </div>
+      </div>
+
+      <div class="rowline filter-block">
+        <label class="switch"><input type="checkbox" id="optFilter">按条件过滤行（支持多条件）</label>
+        <span class="mini">例：货号列填 <code>^SH\d+C-\d+$</code>，保留匹配行即可略过 TOTAL/客户要求等末尾行；可加多条条件</span>
+      </div>
+      <div class="filter-body" id="filterBody">
+        <div class="rowline">
+          <div class="field inline">
+            <label>条件关系</label>
+            <select id="fltCombine">
+              <option value="and">且（全部满足才保留）</option>
+              <option value="or">或（任一满足即保留）</option>
+            </select>
+          </div>
+        </div>
+        <div class="filter-rules" id="filterRules"></div>
+        <button class="btn ghost" id="btnAddFilter">+ 添加过滤条件</button>
+      </div>
+
+      <div class="rowline filter-block">
+        <label class="switch"><input type="checkbox" id="optSplit">拆行：把某列按分隔符拆成多行（如颜色 红/蓝 → 两行）</label>
+        <div class="field inline">
+          <label>拆分列</label>
+          <select id="splitCol"><option value="">— 选列 —</option></select>
+        </div>
+        <div class="field inline">
+          <label>分隔符</label>
+          <input type="text" id="splitDelim" value="/" style="width:70px">
+        </div>
+      </div>
+
+      <div class="rowline">
+        <label class="switch"><input type="checkbox" id="optAgg">聚合：按某列分组求和（多行汇总为一行）</label>
+        <div class="field inline">
+          <label>分组列</label>
+          <select id="aggCol"><option value="">— 选列 —</option></select>
+        </div>
+        <div class="field inline">
+          <label>求和列</label>
+          <input type="text" id="aggSum" placeholder="数量,总价" style="min-width:150px">
+        </div>
+        <span class="mini">未列入求和的列取组内第一行的值</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 步骤 4 -->
+  <section class="section" id="previewArea">
+    <header>
+      <span class="step-no">4</span>
+      <h2>结果预览</h2>
+      <span class="hint" id="previewHint"></span>
+    </header>
+    <div class="body">
+      <div class="empty-state" id="previewEmpty">配置好映射后点「预览」查看效果。</div>
+      <div class="table-scroll" id="previewWrap" hidden>
+        <table id="previewTable"><thead id="pvHead"></thead><tbody id="pvBody"></tbody></table>
+      </div>
+      <div class="log" id="log" hidden></div>
+    </div>
+  </section>
+
+</div>
+
+<div class="actionbar">
+  <div class="inner">
+    <span class="stat" id="status">等待加载文件…</span>
+    <div class="spacer"></div>
+    <button class="btn" id="btnPreview" disabled>预览</button>
+    <button class="btn primary" id="btnRun" disabled>转换并下载 xlsx</button>
+  </div>
+</div>
+
+<script src="vendor/xlsx.full.min.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
